@@ -33,7 +33,7 @@ async def cmd_start(message: Message):
             "🔹 Услуга 4 — Проверить мой Премиум-статус\n\n"
             "Пожалуйста, выберите нужный вариант ниже 👇"
         )
-         buttons = [
+    buttons = [
             [InlineKeyboardButton(text="🎁 Получить Услугу 1 (Бесплатно)", callback_data="buy_1")],
             [InlineKeyboardButton(text="🎁 Купить Услугу 2 (15 ⭐)", callback_data="buy_2")],
             [InlineKeyboardButton(text="🎁 Получить Услугу 3 (Бесплатно)", callback_data="buy_3")],
