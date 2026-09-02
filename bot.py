@@ -5,13 +5,13 @@ from aiogram.types import Message, PreCheckoutQuery, LabeledPrice, InlineKeyboar
 from aiohttp import web
 
 # =====================================================================
-# ⚙️ НАСТРОЙКИ БОТА (ЗАПОЛНИТЕ ИХ СНОВА)
+# ⚙️ НАСТРОЙКИ БОТА (ПОЛНОСТЬЮ ЗАПОЛНЕНЫ)
 # =====================================================================
 BOT_TOKEN = "8794720260:AAHW2mDu2ZNUuZJ5_ZO1Ie04H6HvBI22NrU"  
-MY_MAIN_ID = 7280784652         
-PREMIUM_GUESTS = [8689151856,7812909821,7280784652,7280784652,7280784652,8971823517,7280784652,7286650435] 
+MY_MAIN_ID = 7280784652        
+PREMIUM_GUESTS = [8689151856, 7812909821, 7280784652, 8971823517, 7286650435] 
 
-# 🔗 ССЫЛКА ДЛЯ УСЛУГИ 3 (Вставьте сюда вашу ссылку)
+# 🔗 ССЫЛКА ДЛЯ УСЛУГИ 3 (Ваш закрытый премиум-канал)
 URL_FOR_SERVICE_3 = "https://t.me/+KZgRwt-38bljNDMy"
 # =====================================================================
 
@@ -23,37 +23,41 @@ dp = Dispatcher()
 async def cmd_start(message: Message):
     user_id = message.from_user.id
     is_premium = user_id in PREMIUM_GUESTS
+    
+    # 📋 ТЕКСТ ПРАЙС-ЛИСТА С ВАШИМИ ОПИСАНИЯМИ
     if is_premium:
-       text = (
+        text = (
             "✨ **Добро пожаловать, Премиум-гость!** ✨\n"
-            "Для вас действуют особые цены:\n\n"
-            "🔹 Услуга 1 — личный поход по парковке со всеми тонкостями и скрытми местами✅  🎉 БЕСПЛАТНО\n"
-            "🔹 Услуга 2 — Кастомные карты/путеводитель по парковке со всеми самыми безопасными маршрутами✅ 15 Stars (вместо 25)\n"
-            "🔹 Услуга 3 —Частный канал с самой важной и секретной информацией✅ 🎉 БЕСПЛАТНО\n"
-            "🔹 Услуга 4 — Проверить мой Премиум-статус\n\n"
+            "Для вас действуют особые цены и условия:\n\n"
+            "🔹 **Услуга 1** — Личный поход по парковке со всеми тонкостями и скрытыми местами ✅ | 🎉 **БЕСПЛАТНО**\n"
+            "🔹 **Услуга 2** — Кастомные карты/путеводитель по парковке со всеми самыми безопасными маршрутами ✅ | 🔥 **15 Stars**\n"
+            "🔹 **Услуга 3** — Частный канал с самой важной и секретной информацией ✅ | 🎉 **БЕСПЛАТНО**\n"
+            "🔹 **Вариант 4** — Проверить ваш статус в системе\n\n"
             "Пожалуйста, выберите нужный вариант ниже 👇"
         )
-    buttons = [
-            [InlineKeyboardButton(text="🎁 Получить Услугу 1 (Бесплатно)", callback_data="buy_1")],
-            [InlineKeyboardButton(text="🎁 Купить Услугу 2 (15 ⭐)", callback_data="buy_2")],
-            [InlineKeyboardButton(text="🎁 Получить Услугу 3 (Бесплатно)", callback_data="buy_3")],
-            [InlineKeyboardButton(text="🔍 Проверить статус (Вариант 4)", callback_data="check_premium")]
-        ]
+        btn1_text = "🎁 Получить Услугу 1 (Бесплатно)"
+        btn2_text = "🎁 Купить Услугу 2 (15 ⭐)"
+        btn3_text = "🎁 Получить Услугу 3 (Бесплатно)"
     else:
         text = (
-            "👋 Привет! Вот наш актуальный прайс-лист:\n\n"
-            "🔹 Услуга 1 — личный поход по парковке со всеми тонкостями и скрытми местами✅ (15 Stars)\n"
-            "🔹 Услуга 2 — Кастомные карты/путеводитель по парковке со всеми самыми безопасными маршрутами✅ (25 Stars)\n"
-            "🔹 Услуга 3 — Частный канал с самой важной и секретной информацией✅ (15 Stars)\n"
-            "🔹 Услуга 4 — Проверить мой Премиум-статус\n\n"
-            "Пожалуйста, выберите нужный вариант ниже 👇"
+            "👋 **Привет! Вот наш актуальный прайс-лист:**\n\n"
+            "🔹 **Услуга 1** — Личный поход по парковке со всеми тонкостями и скрытыми местами ✅ | 💰 **15 Stars**\n"
+            "🔹 **Услуга 2** — Кастомные карты/путеводитель по парковке со всеми самыми безопасными маршрутами ✅ | 💰 **25 Stars**\n"
+            "🔹 **Услуга 3** — Частный канал с самой важной и секретной информацией ✅ | 💰 **15 Stars**\n"
+            "🔹 **Вариант 4** — Проверить свой Премиум-статус\n\n"
+            "Пожалуйста, выберите нужную услугу ниже 👇"
         )
-        buttons = [
-            [InlineKeyboardButton(text="🎁 Купить Услугу 1 (15 ⭐)", callback_data="buy_1")],
-            [InlineKeyboardButton(text="🎁 Купить Услугу 2 (25 ⭐)", callback_data="buy_2")],
-            [InlineKeyboardButton(text="🎁 Купить Услугу 3 (15 ⭐)", callback_data="buy_3")],
-            [InlineKeyboardButton(text="🔍 Проверить статус (Вариант 4)", callback_data="check_premium")]
-        ]
+        btn1_text = "🎁 Купить Услугу 1 (15 ⭐)"
+        btn2_text = "🎁 Купить Услугу 2 (25 ⭐)"
+        btn3_text = "🎁 Купить Услугу 3 (15 ⭐)"
+    
+    buttons = [
+        [InlineKeyboardButton(text=btn1_text, callback_data="buy_1")],
+        [InlineKeyboardButton(text=btn2_text, callback_data="buy_2")],
+        [InlineKeyboardButton(text=btn3_text, callback_data="buy_3")],
+        [InlineKeyboardButton(text="🔍 Проверить статус (Вариант 4)", callback_data="check_premium")]
+    ]
+        
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
 
@@ -64,26 +68,31 @@ async def process_buy(callback: CallbackQuery):
     service_id = callback.data.split("_")[-1]
     is_premium = user_id in PREMIUM_GUESTS
 
+    # Названия для инвойсов оплаты
+    service_names = {
+        "1": "Личный поход по парковке",
+        "2": "Кастомные карты/путеводитель",
+        "3": "Частный секретный канал"
+    }
+    current_service_name = service_names.get(service_id, f"Услуга №{service_id}")
+
     if is_premium:
         if service_id == "1":
-            await callback.message.answer("🎉 Вы активировали Услугу №1 БЕСПЛАТНО!")
-            notification_text = f"🎁 **БЕСПЛАТНАЯ АКТИВАЦИЯ!**\n👤 {user.full_name} (@{user.username})\n📦 Услуга 1"
+            await callback.message.answer("🎉 Вы активировали услугу «Личный поход по парковке» БЕСПЛАТНО!")
+            notification_text = f"🎁 **БЕСПЛАТНАЯ АКТИВАЦИЯ!**\n👤 {user.full_name} (@{user.username})\n📦 Услуга 1 (Поход по парковке)"
             await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
             await callback.answer()
             return
-            
         elif service_id == "3":
-            # Премиум сразу получает ссылку без оплаты
             await callback.message.answer(
-                f"🎉 По вашей Премиум-подписке Услуга №3 доступна БЕСПЛАТНО!\n\n"
-                f"🔗 **Ваша ссылка:** {URL_FOR_SERVICE_3}",
+                f"🎉 По вашей Премиум-подписке доступ к частному каналу предоставлен БЕСПЛАТНО!\n\n"
+                f"🔗 **Ссылка для входа:** {URL_FOR_SERVICE_3}",
                 disable_web_page_preview=True
             )
-            notification_text = f"🎁 **БЕСПЛАТНАЯ ССЫЛКА (Услуга 3)!**\n👤 {user.full_name} (@{user.username})\n📦 Получил доступ к ссылке"
+            notification_text = f"🎁 **БЕСПЛАТНАЯ ССЫЛКА!**\n👤 {user.full_name} (@{user.username})\n📦 Получил ссылку на Частный канал"
             await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
             await callback.answer()
             return
-            
         elif service_id == "2":
             price = 15
     else:
@@ -91,8 +100,8 @@ async def process_buy(callback: CallbackQuery):
         price = prices.get(service_id, 15)
 
     await callback.message.answer_invoice(
-        title=f"Оплата Услуги №{service_id}",
-        description=f"Оплата через Telegram Stars",
+        title=current_service_name,
+        description=f"Оплата цифровой услуги через Telegram Stars",
         payload=f"service_{service_id}",
         provider_token="", 
         currency="XTR",    
@@ -103,7 +112,7 @@ async def process_buy(callback: CallbackQuery):
 @dp.callback_query(F.data == "check_premium")
 async def process_check_premium(callback: CallbackQuery):
     user_id = callback.from_user.id
-    status_text = "✨ Вы в списке премиум гостей!" if user_id in PREMIUM_GUESTS else "❌ Вас нет в списке премиум гостей."
+    status_text = "✨ Вы успешно внесены в список премиум гостей!" if user_id in PREMIUM_GUESTS else "❌ Вас нет в списке премиум гостей."
     await callback.message.answer(status_text)
     await callback.answer()
 
@@ -117,17 +126,15 @@ async def success_payment_handler(message: Message):
     payload = payment_info.invoice_payload
     user = message.from_user
 
-    # Если оплачена Услуга 3 — выдаем ссылку
     if payload == "service_3":
         await message.answer(
             f"🎉 Спасибо за оплату!\n\n"
-            f"🔗 **Ваша ссылка на Услугу №3:** {URL_FOR_SERVICE_3}",
+            f"🔗 **Ваша ссылка на Частный канал (Услуга №3):** {URL_FOR_SERVICE_3}",
             disable_web_page_preview=True
         )
     else:
-        await message.answer("🎉 Спасибо за оплату! Ваша услуга активирована.")
+        await message.answer("🎉 Спасибо за оплату! Ваша услуга успешно активирована.")
 
-    # Уведомление вам на основной аккаунт
     is_premium = "Да ✅" if user.id in PREMIUM_GUESTS else "Нет ❌"
     notification_text = f"🚨 **НОВЫЙ ОПЛАЧЕННЫЙ ЗАКАЗ!**\n👤 {user.full_name}\n📦 {payload}\n🌟 Премиум: {is_premium}\n💰 {payment_info.total_amount} Stars"
     await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
@@ -149,5 +156,3 @@ async def start_bot():
 
 if __name__ == "__main__":
     asyncio.run(start_bot())
-
-
