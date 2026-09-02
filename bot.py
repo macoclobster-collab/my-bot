@@ -1,27 +1,30 @@
 import asyncio
+import os
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, PreCheckoutQuery, LabeledPrice, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiohttp import web
 
 # =====================================================================
-# ⚙️ НАСТРОЙКИ БОТА (ЗАПОЛНИТЕ ИХ ПЕРЕД ЗАГРУЗКОЙ)
+# ⚙️ НАСТРОЙКИ БОТА (ЗАПОЛНИТЕ ИХ СНОВА)
 # =====================================================================
-BOT_TOKEN = "8794720260:AAHW2mDu2ZNUuZJ5_ZO1Ie04H6HvBI22NrU"  # Токен от @BotFather
-MY_MAIN_ID = 7280784652        # Ваш личный Telegram ID для уведомлений
-
-# Список Telegram ID премиум-гостей через запятую (например:)
+BOT_TOKEN = "8794720260:AAHW2mDu2ZNUuZJ5_ZO1Ie04H6HvBI22NrU"  
+MY_MAIN_ID = 7280784652         
 PREMIUM_GUESTS = [8689151856,7812909821,7280784652,7280784652,7280784652,8971823517,7280784652,7286650435] 
+
+# 🔗 ССЫЛКА ДЛЯ УСЛУГИ 3 (Вставьте сюда вашу ссылку)
+URL_FOR_SERVICE_3 = "https://t.me/+KZgRwt-38bljNDMy"
 # =====================================================================
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
+# --- ЛОГИКА БОТА ---
 @dp.message(F.text == "/start")
 async def cmd_start(message: Message):
     user_id = message.from_user.id
     is_premium = user_id in PREMIUM_GUESTS
-
     if is_premium:
-        text = (
+       text = (
             "✨ **Добро пожаловать, Премиум-гость!** ✨\n"
             "Для вас действуют особые цены:\n\n"
             "🔹 Услуга 1 — личный поход по парковке со всеми тонкостями и скрытми местами✅  🎉 БЕСПЛАТНО\n"
@@ -51,7 +54,6 @@ async def cmd_start(message: Message):
             [InlineKeyboardButton(text="🎁 Купить Услугу 3 (15 ⭐)", callback_data="buy_3")],
             [InlineKeyboardButton(text="🔍 Проверить статус (Вариант 4)", callback_data="check_premium")]
         ]
-        
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
 
@@ -59,22 +61,29 @@ async def cmd_start(message: Message):
 async def process_buy(callback: CallbackQuery):
     user_id = callback.from_user.id
     user = callback.from_user
-    service_id = callback.data.split("_")[1]
+    service_id = callback.data.split("_")[-1]
     is_premium = user_id in PREMIUM_GUESTS
 
     if is_premium:
-        if service_id in ["1", "3"]:
-            await callback.message.answer(f"🎉 Вы активировали Услугу №{service_id} БЕСПЛАТНО по вашей Премиум-подписке!")
-            notification_text = (
-                "🎁 **БЕСПЛАТНАЯ АКТИВАЦИЯ (ПРЕМИУМ)!** 🎁\n\n"
-                f"👤 **Пользователь:** {user.full_name} (@{user.username})\n"
-                f"🆔 **ID:** `{user.id}`\n"
-                f"📦 **Выбрано:** Услуга {service_id}\n"
-                f"💰 **Стоимость:** 0 Stars"
-            )
+        if service_id == "1":
+            await callback.message.answer("🎉 Вы активировали Услугу №1 БЕСПЛАТНО!")
+            notification_text = f"🎁 **БЕСПЛАТНАЯ АКТИВАЦИЯ!**\n👤 {user.full_name} (@{user.username})\n📦 Услуга 1"
             await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
             await callback.answer()
             return
+            
+        elif service_id == "3":
+            # Премиум сразу получает ссылку без оплаты
+            await callback.message.answer(
+                f"🎉 По вашей Премиум-подписке Услуга №3 доступна БЕСПЛАТНО!\n\n"
+                f"🔗 **Ваша ссылка:** {URL_FOR_SERVICE_3}",
+                disable_web_page_preview=True
+            )
+            notification_text = f"🎁 **БЕСПЛАТНАЯ ССЫЛКА (Услуга 3)!**\n👤 {user.full_name} (@{user.username})\n📦 Получил доступ к ссылке"
+            await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
+            await callback.answer()
+            return
+            
         elif service_id == "2":
             price = 15
     else:
@@ -83,7 +92,7 @@ async def process_buy(callback: CallbackQuery):
 
     await callback.message.answer_invoice(
         title=f"Оплата Услуги №{service_id}",
-        description=f"Оплата цифровой услуги через Telegram Stars",
+        description=f"Оплата через Telegram Stars",
         payload=f"service_{service_id}",
         provider_token="", 
         currency="XTR",    
@@ -94,10 +103,7 @@ async def process_buy(callback: CallbackQuery):
 @dp.callback_query(F.data == "check_premium")
 async def process_check_premium(callback: CallbackQuery):
     user_id = callback.from_user.id
-    if user_id in PREMIUM_GUESTS:
-        status_text = "✨ Вы успешно внесены в список премиум гостей!"
-    else:
-        status_text = "❌ Вас нет в списке премиум гостей."
+    status_text = "✨ Вы в списке премиум гостей!" if user_id in PREMIUM_GUESTS else "❌ Вас нет в списке премиум гостей."
     await callback.message.answer(status_text)
     await callback.answer()
 
@@ -111,21 +117,37 @@ async def success_payment_handler(message: Message):
     payload = payment_info.invoice_payload
     user = message.from_user
 
-    await message.answer("🎉 Спасибо за оплату! Ваша услуга активирована.")
-    is_premium = "Да ✅" if user.id in PREMIUM_GUESTS else "Нет ❌"
+    # Если оплачена Услуга 3 — выдаем ссылку
+    if payload == "service_3":
+        await message.answer(
+            f"🎉 Спасибо за оплату!\n\n"
+            f"🔗 **Ваша ссылка на Услугу №3:** {URL_FOR_SERVICE_3}",
+            disable_web_page_preview=True
+        )
+    else:
+        await message.answer("🎉 Спасибо за оплату! Ваша услуга активирована.")
 
-    notification_text = (
-        "🚨 **НОВЫЙ ОПЛАЧЕННЫЙ ЗАКАЗ!** 🚨\n\n"
-        f"👤 **Покупатель:** {user.full_name} (@{user.username})\n"
-        f"🆔 **ID:** `{user.id}`\n"
-        f"🌟 **Премиум гость:** {is_premium}\n"
-        f"📦 **Товар:** {payload}\n"
-        f"💰 **Сумма:** {payment_info.total_amount} Telegram Stars"
-    )
+    # Уведомление вам на основной аккаунт
+    is_premium = "Да ✅" if user.id in PREMIUM_GUESTS else "Нет ❌"
+    notification_text = f"🚨 **НОВЫЙ ОПЛАЧЕННЫЙ ЗАКАЗ!**\n👤 {user.full_name}\n📦 {payload}\n🌟 Премиум: {is_premium}\n💰 {payment_info.total_amount} Stars"
     await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
 
-async def main():
-    await dp.start_polling(bot)
+# --- КОД ДЛЯ РАБОТЫ НА RENDER ---
+async def handle_root(request):
+    return web.Response(text="Бот запущен и работает!")
+
+async def start_bot():
+    asyncio.create_task(dp.start_polling(bot))
+    app = web.Application()
+    app.router.add_get("/", handle_root)
+    port = int(os.environ.get("PORT", 8080))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(start_bot())
+
+
