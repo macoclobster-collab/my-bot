@@ -5,13 +5,14 @@ from aiogram.types import Message, PreCheckoutQuery, LabeledPrice, InlineKeyboar
 from aiohttp import web
 
 # =====================================================================
-# ⚙️ НАСТРОЙКИ БОТА (ПОЛНОСТЬЮ ИСПРАВЛЕНЫ)
+# ⚙️ НАСТРОЙКИ БОТА (ПОЛНОСТЬЮ ЗАПОЛНЕНЫ)
 # =====================================================================
 BOT_TOKEN = "8794720260:AAHW2mDu2ZNUuZJ5_ZO1Ie04H6HvBI22NrU"  
 MY_MAIN_ID = 7280784652        
 
-# Уникальный список ваших гостей без дубликатов и ошибок
-PREMIUM_GUESTS = [8689151856, 7812909821, 7280784652, 8971823517, 7286650435]
+# Программа сама отфильтрует этот список от любых ошибок и дубликатов
+RAW_GUESTS = [8689151856, 7812909821, 7280784652, 8971823517, 7286650435]
+PREMIUM_GUESTS = list(set(RAW_GUESTS))
 
 # 🔗 ССЫЛКА ДЛЯ УСЛУГИ 3 (Ваш закрытый премиум-канал)
 URL_FOR_SERVICE_3 = "https://t.me/+KZgRwt-38bljNDMy"
@@ -26,7 +27,6 @@ DB_USERNAMES = "usernames.txt"
 
 def save_user(user_id, username):
     """Сохранение пользователя в базу данных"""
-    # Гарантируем создание файлов, если их нет
     if not os.path.exists(DB_USERS):
         with open(DB_USERS, "w") as f:
             pass
@@ -238,5 +238,3 @@ async def success_payment_handler(message: Message):
 
 # --- ПЕРЕСЫЛКА ТЕКСТА КЛИЕНТОВ ВАМ ---
 @dp.message(F.from_user.id != MY_MAIN_ID)
-async def forward_to_admin(message: Message):
-    user = message.from_user
