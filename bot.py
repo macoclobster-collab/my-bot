@@ -5,14 +5,13 @@ from aiogram.types import Message, PreCheckoutQuery, LabeledPrice, InlineKeyboar
 from aiohttp import web
 
 # =====================================================================
-# ⚙️ НАСТРОЙКИ БОТА (ПОЛНОСТЬЮ ЗАПОЛНЕНЫ)
+# ⚙️ НАСТРОЙКИ БОТА (СПИСОК ID ИСПРАВЛЕН И ОЧИЩЕН)
 # =====================================================================
 BOT_TOKEN = "8794720260:AAHW2mDu2ZNUuZJ5_ZO1Ie04H6HvBI22NrU"  
 MY_MAIN_ID = 7280784652        
 
-# База премиум-гостей (Программа сама очистит список от дубликатов)
-RAW_GUESTS = [8689151856;7812909821;7280784652;7280784652;7280784652;8971823517;7280784652;7286650435]
-PREMIUM_GUESTS = list(set(RAW_GUESTS))
+# Все ID разделены правильными запятыми, дубликаты удалены для стабильности
+PREMIUM_GUESTS = [8689151856, 7812909821, 7280784652, 8971823517, 7286650435]
 
 # Ссылка для автовыдачи в Услуге 3
 URL_FOR_SERVICE_3 = "https://t.me/+KZgRwt-38bljNDMy"
@@ -52,8 +51,8 @@ async def admin_reply_by_id(message: Message):
         await message.answer("❌ Неверный формат. Пример: `/юз 123456789 Текст вашего сообщения`")
         return
         
-    raw_id = parts[1].strip()
-    text_to_send = parts[2].strip()
+    raw_id = parts.strip()
+    text_to_send = parts.strip()
     
     if not raw_id.isdigit():
         await message.answer("❌ Ошибка: после /юз должен идти цифровой ID человека. Пример: `/юз 7280784652 Привет!`")
