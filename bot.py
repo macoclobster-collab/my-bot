@@ -9,22 +9,119 @@ from aiohttp import web
 # =====================================================================
 BOT_TOKEN = "8794720260:AAHW2mDu2ZNUuZJ5_ZO1Ie04H6HvBI22NrU"  
 MY_MAIN_ID = 7280784652        
-PREMIUM_GUESTS = [8689151856, 7812909821, 7280784652, 8971823517, 7286650435,7676948389] 
+PREMIUM_GUESTS = [8689151856, 7812909821, 7280784652, 8971823517, 7286650435] 
 
 # 🔗 ССЫЛКА ДЛЯ УСЛУГИ 3 (Ваш закрытый премиум-канал)
-URL_FOR_SERVICE_3 = "https://t.me/+KZgRwt-38bljNDMy"
+URL_FOR_SERVICE_3 = "https://t.me"
 # =====================================================================
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# --- ЛОГИКА БОТА ---
+# Файлы для хранения базы данных пользователей (ID и Юзернеймы)
+DB_USERS = "users.txt"
+DB_USERNAMES = "usernames.txt"
+
+def save_user(user_id, username):
+    """Сохранение пользователя в простую текстовую базу данных"""
+    # Сохраняем ID для рассылки всем
+    if os.path.exists(DB_USERS):
+        with open(DB_USERS, "r") as f:
+            ids = f.read().splitlines()
+    else:
+        ids = []
+    
+    if str(user_id) not in ids:
+        with open(DB_USERS, "a") as f:
+            f.write(f"{user_id}\n")
+            
+    # Сохраняем связку Юзернейм -> ID для поиска по /юз
+    if username:
+        username = username.lower().replace("@", "")
+        lines = []
+        if os.path.exists(DB_USERNAMES):
+            with open(DB_USERNAMES, "r") as f:
+                lines = f.read().splitlines()
+        
+        # Проверяем, есть ли уже этот юзернейм
+        exists = False
+        for line in lines:
+            if line.startswith(f"{username}:"):
+                exists = True
+                break
+        
+        if not exists:
+            with open(DB_USERNAMES, "a") as f:
+                f.write(f"{username}:{user_id}\n")
+
+def get_id_by_username(username):
+    """Поиск Telegram ID по юзернейму"""
+    username = username.lower().replace("@", "").strip()
+    if os.path.exists(DB_USERNAMES):
+        with open(DB_USERNAMES, "r") as f:
+            for line in f:
+                if line.startswith(f"{username}:"):
+                    return int(line.split(":")[1].strip())
+    return None
+
+# --- АДМИН-КОМАНДА: Рассылка всем (/all текст) ---
+@dp.message(F.from_user.id == MY_MAIN_ID, F.text.startswith("/all"))
+async def admin_broadcast(message: Message):
+    text_to_send = message.text.replace("/all", "").strip()
+    if not text_to_send:
+        await message.answer("❌ Вы не ввели текст сообщения. Пример: `/all Привет всем!`")
+        return
+        
+    if not os.path.exists(DB_USERS):
+        await message.answer("❌ База данных пользователей пуста.")
+        return
+        
+    with open(DB_USERS, "r") as f:
+        user_ids = f.read().splitlines()
+        
+    success_count = 0
+    for u_id in user_ids:
+        try:
+            await bot.send_message(chat_id=int(u_id), text=text_to_send)
+            success_count += 1
+            await asyncio.sleep(0.05)  # Защита от спам-фильтра Telegram
+        except Exception:
+            pass
+            
+    await message.answer(f"📢 Рассылка завершена! Отправлено сообщений: {success_count} из {len(user_ids)}")
+
+# --- АДМИН-КОМАНДА: Ответ по юзернейму (/юз @username текст) ---
+@dp.message(F.from_user.id == MY_MAIN_ID, F.text.startswith("/юз"))
+async def admin_reply_by_username(message: Message):
+    parts = message.text.split(maxsplit=2)
+    if len(parts) < 3:
+        await message.answer("❌ Неверный формат. Пример: `/юз @username Текст сообщения`")
+        return
+        
+    target_username = parts[1]
+    text_to_send = parts[2]
+    
+    target_id = get_id_by_username(target_username)
+    if not target_id:
+        await message.answer(f"❌ Пользователь {target_username} не найден в базе данных бота. Он должен хотя бы раз написать /start.")
+        return
+        
+    try:
+        await bot.send_message(chat_id=target_id, text=text_to_send)
+        await message.answer(f"✅ Сообщение успешно отправлено пользователю {target_username}!")
+    except Exception as e:
+        await message.answer(f"❌ Не удалось отправить сообщение: {e}")
+
+# --- ЛОГИКА БОТА ДЛЯ КЛИЕНТОВ ---
 @dp.message(F.text == "/start")
 async def cmd_start(message: Message):
     user_id = message.from_user.id
+    username = message.from_user.username
     is_premium = user_id in PREMIUM_GUESTS
     
-    # 📋 ТЕКСТ ПРАЙС-ЛИСТА С ВАШИМИ ОПИСАНИЯМИ
+    # Сохраняем пользователя в базу данных
+    save_user(user_id, username)
+    
     if is_premium:
         text = (
             "✨ **Добро пожаловать, Премиум-гость!** ✨\n"
@@ -68,7 +165,6 @@ async def process_buy(callback: CallbackQuery):
     service_id = callback.data.split("_")[-1]
     is_premium = user_id in PREMIUM_GUESTS
 
-    # Названия для инвойсов оплаты
     service_names = {
         "1": "Личный поход по парковке",
         "2": "Кастомные карты/путеводитель",
@@ -139,20 +235,3 @@ async def success_payment_handler(message: Message):
     notification_text = f"🚨 **НОВЫЙ ОПЛАЧЕННЫЙ ЗАКАЗ!**\n👤 {user.full_name}\n📦 {payload}\n🌟 Премиум: {is_premium}\n💰 {payment_info.total_amount} Stars"
     await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
 
-# --- КОД ДЛЯ РАБОТЫ НА RENDER ---
-async def handle_root(request):
-    return web.Response(text="Бот запущен и работает!")
-
-async def start_bot():
-    asyncio.create_task(dp.start_polling(bot))
-    app = web.Application()
-    app.router.add_get("/", handle_root)
-    port = int(os.environ.get("PORT", 8080))
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    await asyncio.Event().wait()
-
-if __name__ == "__main__":
-    asyncio.run(start_bot())
