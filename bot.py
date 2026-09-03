@@ -5,11 +5,13 @@ from aiogram.types import Message, PreCheckoutQuery, LabeledPrice, InlineKeyboar
 from aiohttp import web
 
 # =====================================================================
-# ⚙️ НАСТРОЙКИ БОТА (ПОЛНОСТЬЮ ЗАПОЛНЕНЫ)
+# ⚙️ НАСТРОЙКИ БОТА (ПОЛНОСТЬЮ ИСПРАВЛЕНЫ)
 # =====================================================================
 BOT_TOKEN = "8794720260:AAHW2mDu2ZNUuZJ5_ZO1Ie04H6HvBI22NrU"  
 MY_MAIN_ID = 7280784652        
-PREMIUM_GUESTS = [8689151856, 7812909821, 7280784652, 8971823517, 7286650435] 
+
+# Уникальный список ваших гостей без дубликатов и ошибок
+PREMIUM_GUESTS = [8689151856, 7812909821, 7280784652, 8971823517, 7286650435]
 
 # 🔗 ССЫЛКА ДЛЯ УСЛУГИ 3 (Ваш закрытый премиум-канал)
 URL_FOR_SERVICE_3 = "https://t.me/+KZgRwt-38bljNDMy"
@@ -18,32 +20,32 @@ URL_FOR_SERVICE_3 = "https://t.me/+KZgRwt-38bljNDMy"
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# Файлы для хранения базы данных пользователей (ID и Юзернеймы)
+# Файлы базы данных пользователей
 DB_USERS = "users.txt"
 DB_USERNAMES = "usernames.txt"
 
 def save_user(user_id, username):
-    """Сохранение пользователя в простую текстовую базу данных"""
-    # Сохраняем ID для рассылки всем
-    if os.path.exists(DB_USERS):
-        with open(DB_USERS, "r") as f:
-            ids = f.read().splitlines()
-    else:
-        ids = []
+    """Сохранение пользователя в базу данных"""
+    # Гарантируем создание файлов, если их нет
+    if not os.path.exists(DB_USERS):
+        with open(DB_USERS, "w") as f:
+            pass
+    if not os.path.exists(DB_USERNAMES):
+        with open(DB_USERNAMES, "w") as f:
+            pass
+
+    with open(DB_USERS, "r") as f:
+        ids = f.read().splitlines()
     
     if str(user_id) not in ids:
         with open(DB_USERS, "a") as f:
             f.write(f"{user_id}\n")
             
-    # Сохраняем связку Юзернейм -> ID для поиска по /юз
     if username:
-        username = username.lower().replace("@", "")
-        lines = []
-        if os.path.exists(DB_USERNAMES):
-            with open(DB_USERNAMES, "r") as f:
-                lines = f.read().splitlines()
+        username = username.lower().replace("@", "").strip()
+        with open(DB_USERNAMES, "r") as f:
+            lines = f.read().splitlines()
         
-        # Проверяем, есть ли уже этот юзернейм
         exists = False
         for line in lines:
             if line.startswith(f"{username}:"):
@@ -84,7 +86,7 @@ async def admin_broadcast(message: Message):
         try:
             await bot.send_message(chat_id=int(u_id), text=text_to_send)
             success_count += 1
-            await asyncio.sleep(0.05)  # Защита от спам-фильтра Telegram
+            await asyncio.sleep(0.05)
         except Exception:
             pass
             
@@ -103,7 +105,7 @@ async def admin_reply_by_username(message: Message):
     
     target_id = get_id_by_username(target_username)
     if not target_id:
-        await message.answer(f"❌ Пользователь {target_username} не найден в базе данных бота. Он должен хотя бы раз написать /start.")
+        await message.answer(f"❌ Пользователь {target_username} не найден. Он должен хотя бы раз написать /start.")
         return
         
     try:
@@ -119,7 +121,6 @@ async def cmd_start(message: Message):
     username = message.from_user.username
     is_premium = user_id in PREMIUM_GUESTS
     
-    # Сохраняем пользователя в базу данных
     save_user(user_id, username)
     
     if is_premium:
@@ -175,7 +176,7 @@ async def process_buy(callback: CallbackQuery):
     if is_premium:
         if service_id == "1":
             await callback.message.answer("🎉 Вы активировали услугу «Личный поход по парковке» БЕСПЛАТНО!")
-            notification_text = f"🎁 **БЕСПЛАТНАЯ АКТИВАЦИЯ!**\n👤 {user.full_name} (@{user.username})\n📦 Услуга 1 (Поход по парковке)"
+            notification_text = f"🎁 **БЕСПЛАТНАЯ АКТИВАЦИЯ!**\n👤 {user.full_name} (@{user.username})\n📦 Услуга 1"
             await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
             await callback.answer()
             return
@@ -185,7 +186,7 @@ async def process_buy(callback: CallbackQuery):
                 f"🔗 **Ссылка для входа:** {URL_FOR_SERVICE_3}",
                 disable_web_page_preview=True
             )
-            notification_text = f"🎁 **БЕСПЛАТНАЯ ССЫЛКА!**\n👤 {user.full_name} (@{user.username})\n📦 Получил ссылку на Частный канал"
+            notification_text = f"🎁 **БЕСПЛАТНАЯ ССЫЛКА!**\n👤 {user.full_name} (@{user.username})\n📦 Получил ссылку на Канал"
             await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
             await callback.answer()
             return
@@ -235,3 +236,7 @@ async def success_payment_handler(message: Message):
     notification_text = f"🚨 **НОВЫЙ ОПЛАЧЕННЫЙ ЗАКАЗ!**\n👤 {user.full_name}\n📦 {payload}\n🌟 Премиум: {is_premium}\n💰 {payment_info.total_amount} Stars"
     await bot.send_message(chat_id=MY_MAIN_ID, text=notification_text, parse_mode="Markdown")
 
+# --- ПЕРЕСЫЛКА ТЕКСТА КЛИЕНТОВ ВАМ ---
+@dp.message(F.from_user.id != MY_MAIN_ID)
+async def forward_to_admin(message: Message):
+    user = message.from_user
